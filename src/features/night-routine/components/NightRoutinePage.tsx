@@ -168,7 +168,7 @@ const NightRoutinePage = () => {
             </div>
           ) : (
             tasks.map((task) => (
-              <div
+              <label
                 key={task.id}
                 className={`group flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition ${
                   task.checkedAt
@@ -176,8 +176,8 @@ const NightRoutinePage = () => {
                     : 'border-white/60 bg-white/70'
                 }`}
               >
-                {/* label でチェックと文字をひとつのクリック領域にする */}
-                <label className="flex items-center gap-3 text-base font-medium text-[#111827]">
+                {/* カード全体を label にして、どこをタップしても切り替わるようにする */}
+                <span className="flex items-center gap-3 text-base font-medium text-[#111827]">
                   <input
                     type="checkbox"
                     checked={Boolean(task.checkedAt)}
@@ -185,11 +185,11 @@ const NightRoutinePage = () => {
                     className="h-5 w-5 rounded border-[#9ca3af] text-[#0f766e] focus:ring-[#0f766e]"
                   />
                   {task.title}
-                </label>
+                </span>
                 <span className="text-xs text-[#6b7280]">
                   {task.checkedAt ? `記録: ${formatDateTime(task.checkedAt)}` : '未記録'}
                 </span>
-              </div>
+              </label>
             ))
           )}
         </div>
