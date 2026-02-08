@@ -13,6 +13,7 @@ interface TodoItem {
 type FilterType = 'active' | 'completed' | 'all'
 
 const STORAGE_KEY = 'daily-bloom-todo-items'
+const NOTIFICATION_KEY = 'daily-bloom-todo-notified-date'
 const COMPLETED_RETENTION_DAYS = 7
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
@@ -21,6 +22,14 @@ const getTodayInputValue = () => {
   const now = new Date()
   const offset = now.getTimezoneOffset() * 60 * 1000
   return new Date(now.getTime() - offset).toISOString().slice(0, 10)
+}
+
+// ISO 文字列を input[type="date"] と同じ形式にそろえて比較しやすくする
+const toLocalDateInputValue = (isoString: string) => {
+  const date = new Date(isoString)
+  if (Number.isNaN(date.getTime())) return ''
+  const offset = date.getTimezoneOffset() * 60 * 1000
+  return new Date(date.getTime() - offset).toISOString().slice(0, 10)
 }
 
 // JSON を安全に読み取り、期限切れの完了タスクを削除して返す
@@ -66,6 +75,53 @@ const ToDoList = () => {
   const [dueDate, setDueDate] = useState(getTodayInputValue())
   const [filter, setFilter] = useState<FilterType>('active')
   const [deleteTarget, setDeleteTarget] = useState<TodoItem | null>(null)
+
+  // アプリ起動時に「今日が期日の未完了タスク」を通知する
+  useEffect(() => {
+    if (!('Notification' in window)) return
+
+    const storedTodos = loadTodosFromStorage()
+    const today = getTodayInputValue()
+
+    // 同じ日に複数回通知しないためのガード
+    const lastNotifiedDate = localStorage.getItem(NOTIFICATION_KEY)
+    if (lastNotifiedDate === today) return
+
+    const todaysTodos = storedTodos.filter((todo) => {
+      if (todo.isCompleted) return false
+      if (!todo.dueDate) return false
+      return toLocalDateInputValue(todo.dueDate) === today
+    })
+
+    if (todaysTodos.length === 0) return
+
+    const notify = async () => {
+      // 初回は許可ダイアログを表示し、許可が取れたときだけ通知する
+      if (Notification.permission === 'default') {
+        try {
+          await Notification.requestPermission()
+        } catch {
+          return
+        }
+      }
+
+      if (Notification.permission !== 'granted') return
+
+      const body = todaysTodos
+        .slice(0, 3)
+        .map((todo) => `・${todo.title}`)
+        .join('\n')
+
+      new Notification('今日が期日のToDoがあります', {
+        body: body || `${todaysTodos.length}件あります。`,
+      })
+
+      // 通知した日付を保存して、当日は1回だけにする
+      localStorage.setItem(NOTIFICATION_KEY, today)
+    }
+
+    void notify()
+  }, [])
 
   // タスクが変わるたびに LocalStorage へ保存
   useEffect(() => {
