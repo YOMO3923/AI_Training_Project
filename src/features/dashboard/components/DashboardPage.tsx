@@ -1,4 +1,4 @@
-import { LayoutGrid, ListTodo, MoonStar } from 'lucide-react'
+import { BookOpen, LayoutGrid, ListTodo, MoonStar } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -19,6 +19,13 @@ const apps: AppCard[] = [
     description: '就寝前のタスク管理と実行記録を保存します。',
     path: '/night-routine',
     icon: MoonStar,
+    status: 'Active',
+  },
+  {
+    title: '一言日記',
+    description: 'カレンダーから一言日記を記録・閲覧できます。',
+    path: '/diary',
+    icon: BookOpen,
     status: 'Active',
   },
   {
