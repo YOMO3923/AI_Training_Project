@@ -30,10 +30,10 @@ const apps: AppCard[] = [
   },
   {
     title: 'ToDo List',
-    description: '準備中のサンプルページです。',
+    description: '習慣化を支えるToDo管理。完了は7日で自動削除されます。',
     path: '/todo',
     icon: ListTodo,
-    status: 'Planned',
+    status: 'Active',
   },
 ]
 
