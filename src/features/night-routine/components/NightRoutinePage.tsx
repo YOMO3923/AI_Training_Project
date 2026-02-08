@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Trash2 } from 'lucide-react'
 
 // 1つのタスク情報の型
 type Task = {
@@ -9,6 +10,12 @@ type Task = {
 
 // ローカルストレージに保存するときのキー名
 const STORAGE_KEY = 'night-routine-tasks'
+
+// 18時の自動リセット済み日付を保存するキー（「今日だけ1回」の判定に使う）
+const RESET_FLAG_KEY = 'night-routine-last-reset-date'
+
+// 自動リセットを走らせる時刻（18時）
+const RESET_HOUR = 18
 
 // 初期表示のタスクリスト
 const DEFAULT_TASKS: Task[] = [
@@ -23,6 +30,14 @@ const createId = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `task-${Date.now()}-${Math.random().toString(16).slice(2)}`
+
+// 日付を「YYYY-MM-DD」の形に整形（リセット判定のキーとして利用）
+const getDateKey = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 // ローカルストレージからタスクを読み込む
 const loadTasks = (): Task[] => {
@@ -66,8 +81,15 @@ const NightRoutinePage = () => {
   // useState は「画面の状態」を持つ React の仕組み
   const [tasks, setTasks] = useState<Task[]>(() => loadTasks())
   const [newTaskTitle, setNewTaskTitle] = useState('')
-  const [isEditing, setIsEditing] = useState(false)
-  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
+
+  // 編集用モーダルの開閉を管理（削除候補を一覧で見せるための状態）
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
+  // 一括チェック解除の確認モーダル開閉を管理
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false)
+
+  // 削除確認モーダルで対象となるタスクを保持
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
 
   // useMemo は計算結果のキャッシュ（タスク数の再計算を必要時だけにする）
   const completedCount = useMemo(
@@ -80,6 +102,44 @@ const NightRoutinePage = () => {
     // ローカルストレージへ同期して状態を保持します
     localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks))
   }, [tasks])
+
+  useEffect(() => {
+    // ロジック: 18時以降かつ今日未リセットのときだけ処理する（誤消去防止）
+    const now = new Date()
+    const todayKey = getDateKey(now)
+    const lastReset = localStorage.getItem(RESET_FLAG_KEY)
+    const isAfterResetHour = now.getHours() >= RESET_HOUR
+
+    if (isAfterResetHour && lastReset !== todayKey) {
+      // ロジック: ここでのみ全タスクのチェックを外す（フラグがあるので1日1回）
+      setTasks((prev) =>
+        prev.map((task) => ({
+          ...task,
+          checkedAt: null,
+        })),
+      )
+      // ロジック: 今日分のリセット済み日付を保存し、再実行を防ぐ
+      localStorage.setItem(RESET_FLAG_KEY, todayKey)
+    }
+  }, [])
+
+  // モーダルが開いている間は背景スクロールを止める
+  const isAnyModalOpen = isEditModalOpen || isResetConfirmOpen || Boolean(taskToDelete)
+
+  useEffect(() => {
+    if (!isAnyModalOpen) {
+      // モーダルが閉じたらスクロール制限を解除する
+      document.body.style.overflow = ''
+      return
+    }
+
+    // モーダル表示中は背景を固定して誤操作を防ぐ
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isAnyModalOpen])
 
   // チェックを付け外しする処理
   const handleToggleTask = (taskId: string) => {
@@ -115,29 +175,36 @@ const NightRoutinePage = () => {
     setNewTaskTitle('')
   }
 
-  // 削除対象のチェックをON/OFF
-  const toggleSelectedTask = (taskId: string) => {
-    setSelectedTaskIds((prev) =>
-      prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId],
+  // 一括チェック解除を実行（確認モーダルで承認されたときのみ呼ばれる）
+  const handleResetAllTasks = () => {
+    setTasks((prev) =>
+      prev.map((task) => ({
+        ...task,
+        checkedAt: null,
+      })),
     )
+    setIsResetConfirmOpen(false)
   }
 
-  // 選択したタスクを削除
-  const handleDeleteSelected = () => {
-    if (selectedTaskIds.length === 0) {
-      setIsEditing(false)
+  // 削除対象のタスクを確定させる（確認モーダルを開く）
+  const handleRequestDeleteTask = (task: Task) => {
+    setTaskToDelete(task)
+    setIsEditModalOpen(false)
+  }
+
+  // タスク削除を確定
+  const handleConfirmDeleteTask = () => {
+    if (!taskToDelete) {
       return
     }
 
-    setTasks((prev) => prev.filter((task) => !selectedTaskIds.includes(task.id)))
-    setSelectedTaskIds([])
-    setIsEditing(false)
+    setTasks((prev) => prev.filter((task) => task.id !== taskToDelete.id))
+    setTaskToDelete(null)
   }
 
-  // 編集モードをキャンセル
-  const handleCancelEdit = () => {
-    setSelectedTaskIds([])
-    setIsEditing(false)
+  // 削除確認をキャンセル
+  const handleCancelDeleteTask = () => {
+    setTaskToDelete(null)
   }
 
   return (
@@ -194,60 +261,28 @@ const NightRoutinePage = () => {
           )}
         </div>
 
-        {/* 編集ボタン */}
+        {/* 操作ボタン */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          {/* 編集ボタンはモーダルを開いて削除一覧を表示 */}
           <button
             type="button"
-            onClick={() => setIsEditing(true)}
+            onClick={() => setIsEditModalOpen(true)}
             className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[#111827]/15 bg-white px-4 py-2 text-lg font-semibold text-[#111827] transition hover:border-[#111827]/30"
           >
             タスク編集
           </button>
-          <div className="text-xs text-[#6b7280]">
-            チェックした時刻を自動で記録します。
+          <div className="flex flex-wrap items-center gap-3">
+            {/* 一括チェック解除のボタン（誤操作防止のためモーダルを開く） */}
+            <button
+              type="button"
+              onClick={() => setIsResetConfirmOpen(true)}
+              className="min-h-12 rounded-full border border-[#0f766e]/30 bg-white px-4 py-2 text-sm font-semibold text-[#0f766e] transition hover:border-[#0f766e]/50"
+            >
+              一括チェック解除
+            </button>
+            <div className="text-xs text-[#6b7280]">チェックした時刻を自動で記録します。</div>
           </div>
         </div>
-
-        {/* 編集モード時の削除UI */}
-        {isEditing && (
-          <div className="mt-5 rounded-2xl border border-[#fee2e2] bg-[#fff7f7] p-4">
-            <p className="text-sm font-semibold text-[#b91c1c]">
-              削除するタスクを選んでください
-            </p>
-            <div className="mt-3 grid gap-2">
-              {tasks.map((task) => (
-                <label
-                  key={task.id}
-                  className="flex items-center gap-3 rounded-xl border border-white/70 bg-white/80 px-3 py-2 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedTaskIds.includes(task.id)}
-                    onChange={() => toggleSelectedTask(task.id)}
-                    className="h-4 w-4 rounded border-[#fca5a5] text-[#b91c1c] focus:ring-[#b91c1c]"
-                  />
-                  {task.title}
-                </label>
-              ))}
-            </div>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={handleDeleteSelected}
-                className="min-h-12 rounded-full bg-[#b91c1c] px-5 py-2 text-lg font-semibold text-white transition hover:bg-[#991b1b]"
-              >
-                OK
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelEdit}
-                className="min-h-12 rounded-full border border-[#111827]/20 px-5 py-2 text-lg font-semibold text-[#111827]"
-              >
-                キャンセル
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* 新規タスクの追加エリア */}
         <div className="mt-7 border-t border-dashed border-[#e5e7eb] pt-5">
@@ -270,6 +305,126 @@ const NightRoutinePage = () => {
           </div>
         </div>
       </div>
+
+      {/* 一括チェック解除の確認モーダル */}
+      {isResetConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          {/* 背景オーバーレイで画面全体を覆い、背後の操作を遮断する */}
+          <div className="absolute inset-0 bg-black/50" />
+          {/* モーダル本体（中央配置・角丸・影で浮かせる） */}
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative z-10 w-full max-w-md rounded-2xl border border-white/60 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.25)]"
+          >
+            <h3 className="text-lg font-semibold text-[#111827]">
+              すべてのチェックを外しますか？
+            </h3>
+            <p className="mt-2 text-sm text-[#6b7280]">
+              誤操作防止のため、確認後にのみ一括リセットが実行されます。
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleResetAllTasks}
+                className="min-h-11 rounded-full bg-[#0f766e] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#115e59]"
+              >
+                解除する
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsResetConfirmOpen(false)}
+                className="min-h-11 rounded-full border border-[#111827]/20 px-5 py-2 text-sm font-semibold text-[#111827]"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* タスク編集モーダル（削除対象を一覧で表示） */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          {/* 背景オーバーレイで操作をブロック */}
+          <div className="absolute inset-0 bg-black/50" />
+          {/* モーダル本体 */}
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative z-10 w-full max-w-md rounded-2xl border border-white/60 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.25)]"
+          >
+            <h3 className="text-lg font-semibold text-[#111827]">削除するタスクを選択</h3>
+            <p className="mt-2 text-sm text-[#6b7280]">
+              ゴミ箱ボタンを押すと、確認モーダルが開きます。
+            </p>
+            <div className="mt-4 grid gap-2">
+              {tasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-center justify-between rounded-xl border border-[#e5e7eb] bg-white px-3 py-2"
+                >
+                  <span className="text-sm font-medium text-[#111827]">{task.title}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRequestDeleteTask(task)}
+                    className="inline-flex items-center gap-1 rounded-full border border-[#fee2e2] bg-[#fff7f7] px-3 py-1 text-xs font-semibold text-[#b91c1c]"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    削除
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="min-h-11 rounded-full border border-[#111827]/20 px-5 py-2 text-sm font-semibold text-[#111827]"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* タスク削除の確認モーダル */}
+      {taskToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          {/* 背景オーバーレイで背後をクリックできないようにする */}
+          <div className="absolute inset-0 bg-black/50" />
+          {/* モーダル本体 */}
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative z-10 w-full max-w-md rounded-2xl border border-white/60 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.25)]"
+          >
+            <h3 className="text-lg font-semibold text-[#111827]">
+              「{taskToDelete.title}」を削除しますか？
+            </h3>
+            <p className="mt-2 text-sm text-[#6b7280]">
+              削除したタスクは元に戻せません。
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleConfirmDeleteTask}
+                className="min-h-11 rounded-full bg-[#b91c1c] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#991b1b]"
+              >
+                削除する
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelDeleteTask}
+                className="min-h-11 rounded-full border border-[#111827]/20 px-5 py-2 text-sm font-semibold text-[#111827]"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
