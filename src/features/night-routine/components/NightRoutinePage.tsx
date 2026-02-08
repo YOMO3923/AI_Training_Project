@@ -263,15 +263,16 @@ const NightRoutinePage = () => {
 
         {/* 操作ボタン */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          {/* 編集ボタンはモーダルを開いて削除一覧を表示 */}
-          <button
-            type="button"
-            onClick={() => setIsEditModalOpen(true)}
-            className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[#111827]/15 bg-white px-4 py-2 text-lg font-semibold text-[#111827] transition hover:border-[#111827]/30"
-          >
-            タスク編集
-          </button>
+          {/* 編集ボタンと一括解除ボタンを横並びで配置する */}
           <div className="flex flex-wrap items-center gap-3">
+            {/* 編集ボタンはモーダルを開いて削除一覧を表示 */}
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(true)}
+              className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[#111827]/15 bg-white px-4 py-2 text-lg font-semibold text-[#111827] transition hover:border-[#111827]/30"
+            >
+              タスク編集
+            </button>
             {/* 一括チェック解除のボタン（誤操作防止のためモーダルを開く） */}
             <button
               type="button"
@@ -280,8 +281,8 @@ const NightRoutinePage = () => {
             >
               一括チェック解除
             </button>
-            <div className="text-xs text-[#6b7280]">チェックした時刻を自動で記録します。</div>
           </div>
+          <div className="text-xs text-[#6b7280]">チェックした時刻を自動で記録します。</div>
         </div>
 
         {/* 新規タスクの追加エリア */}
