@@ -219,7 +219,7 @@ const NightRoutinePage = () => {
               Tonight checklist
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-[#111827]">
-              就寝前のナイトルーティーン
+              ナイトルーティーン
             </h2>
           </div>
           <div className="rounded-full border border-[#111827]/10 bg-[#fdf6e9] px-4 py-2 text-sm font-semibold text-[#92400e]">
