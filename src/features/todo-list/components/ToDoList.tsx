@@ -16,6 +16,13 @@ const STORAGE_KEY = 'daily-bloom-todo-items'
 const COMPLETED_RETENTION_DAYS = 7
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
+// input[type="date"] に合わせて「今日」を YYYY-MM-DD 形式で返す
+const getTodayInputValue = () => {
+  const now = new Date()
+  const offset = now.getTimezoneOffset() * 60 * 1000
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10)
+}
+
 // JSON を安全に読み取り、期限切れの完了タスクを削除して返す
 const loadTodosFromStorage = (): TodoItem[] => {
   try {
@@ -56,7 +63,7 @@ const ToDoList = () => {
   // 初回レンダリング時にだけ LocalStorage から復元
   const [todos, setTodos] = useState<TodoItem[]>(() => loadTodosFromStorage())
   const [title, setTitle] = useState('')
-  const [dueDate, setDueDate] = useState('')
+  const [dueDate, setDueDate] = useState(getTodayInputValue())
   const [filter, setFilter] = useState<FilterType>('active')
   const [deleteTarget, setDeleteTarget] = useState<TodoItem | null>(null)
 
@@ -100,7 +107,7 @@ const ToDoList = () => {
 
     setTodos((prev) => [newTodo, ...prev])
     setTitle('')
-    setDueDate('')
+    setDueDate(getTodayInputValue())
   }
 
   const handleToggle = (id: string) => {
