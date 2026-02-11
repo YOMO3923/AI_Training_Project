@@ -29,10 +29,17 @@ const apps: AppCard[] = [
     status: 'Active',
   },
   {
-    title: 'ToDo List',
-    description: '習慣化を支えるToDo管理。完了は7日で自動削除されます。',
+    title: 'ホーム・マネジメント',
+    description: '習慣化を支える家事タスク管理。',
     path: '/todo',
     icon: ListTodo,
+    status: 'Active',
+  },
+  {
+    title: 'ひまつぶしクイズ',
+    description: '気軽に楽しめるクイズゲーム。',
+    path: '/quiz',
+    icon: LayoutGrid,
     status: 'Active',
   },
 ]

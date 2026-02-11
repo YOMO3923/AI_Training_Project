@@ -190,7 +190,10 @@ const ToDoList = () => {
       <div className="rounded-[28px] border border-white/70 bg-white/80 p-7 shadow-[0_24px_80px_rgba(31,41,55,0.18)] backdrop-blur">
         {/* ヘッダー：タイトルと補足情報をまとめる */}
         <div className="flex flex-col gap-2 text-left">
-          <h2 className="text-2xl font-semibold text-[#111827]">ToDo List</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#6b7280]">
+            Home Management
+          </p>
+          <h2 className="text-2xl font-semibold text-[#111827]">ホーム・マネジメント</h2>
           <p className="text-sm text-[#6b7280]">
             完了タスクは自動で7日後に削除されます
           </p>
