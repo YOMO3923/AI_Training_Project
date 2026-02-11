@@ -196,59 +196,6 @@ const ToDoList = () => {
           </p>
         </div>
 
-        {/* 入力エリア：追加という行動に集中できる横並びレイアウト */}
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <input
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') handleAdd()
-            }}
-            placeholder="今日やることを入力"
-            className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3 text-base text-[#111827] outline-none transition focus:border-[#7BAA8E] focus:ring-2 focus:ring-[#7BAA8E]/30"
-          />
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(event) => setDueDate(event.target.value)}
-            className="rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#111827] outline-none transition focus:border-[#7BAA8E] focus:ring-2 focus:ring-[#7BAA8E]/30"
-          />
-          <button
-            type="button"
-            onClick={handleAdd}
-            className="rounded-2xl bg-[#7BAA8E] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#6b9b7d]"
-          >
-            追加する
-          </button>
-        </div>
-
-        {/* フィルター：完了済みは既定で非表示（学習要件に合わせる） */}
-        <div className="mt-6 flex flex-wrap items-center gap-2">
-          {(
-            [
-              { label: '未完了', value: 'active' },
-              { label: '完了', value: 'completed' },
-              { label: '全て', value: 'all' },
-            ] as const
-          ).map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setFilter(option.value)}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                filter === option.value
-                  ? 'bg-[#F08C6B] text-white'
-                  : 'bg-white text-[#6b7280] hover:bg-[#f9efe9]'
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-          <span className="ml-auto text-sm text-[#6b7280]">
-            未完了 {activeCount} / 完了 {completedCount}
-          </span>
-        </div>
-
         {/* リスト：タスク表示エリア。未完了を主役にするため余白を広めに */}
         <div className="mt-6 space-y-3">
           {visibleTodos.length === 0 ? (
@@ -303,6 +250,59 @@ const ToDoList = () => {
               </div>
             ))
           )}
+        </div>
+
+        {/* 入力エリア：追加という行動に集中できる横並びレイアウト */}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') handleAdd()
+            }}
+            placeholder="今日やることを入力"
+            className="w-full rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3 text-base text-[#111827] outline-none transition focus:border-[#7BAA8E] focus:ring-2 focus:ring-[#7BAA8E]/30"
+          />
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(event) => setDueDate(event.target.value)}
+            className="rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#111827] outline-none transition focus:border-[#7BAA8E] focus:ring-2 focus:ring-[#7BAA8E]/30"
+          />
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="rounded-2xl bg-[#7BAA8E] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#6b9b7d]"
+          >
+            追加する
+          </button>
+        </div>
+
+        {/* フィルター：完了済みは既定で非表示（学習要件に合わせる） */}
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          {(
+            [
+              { label: '未完了', value: 'active' },
+              { label: '完了', value: 'completed' },
+              { label: '全て', value: 'all' },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setFilter(option.value)}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                filter === option.value
+                  ? 'bg-[#F08C6B] text-white'
+                  : 'bg-white text-[#6b7280] hover:bg-[#f9efe9]'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+          <span className="ml-auto text-sm text-[#6b7280]">
+            未完了 {activeCount} / 完了 {completedCount}
+          </span>
         </div>
       </div>
 

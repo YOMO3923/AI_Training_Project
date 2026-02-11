@@ -155,9 +155,12 @@ const DiaryPage = () => {
   }月`;
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900">
+    <div className="text-center rounded-[28px] border border-white/70 bg-white/80 p-7 shadow-[0_24px_80px_rgba(31,41,55,0.18)] backdrop-blur">
       <div className="mx-auto w-full max-w-4xl">
         {/* タイトル: 画面の役割がひと目で分かる見出し */}
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#6b7280]">
+          One-line diary
+        </p>
         <h1 className="text-2xl font-bold tracking-wide">一言日記カレンダー</h1>
         <p className="mt-2 text-sm text-slate-600">
           日付をクリックして一言日記を記録できます。

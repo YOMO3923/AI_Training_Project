@@ -15,7 +15,7 @@ function App() {
         <Route path="/" element={<DashboardPage />} />
         {/* ナイトルーティーンページ */}
         <Route path="/night-routine" element={<NightRoutinePage />} />
-        {/* 仮の ToDo ページ */}
+        {/* ToDo ページ */}
         <Route path="/todo" element={<ToDoList />} />
         {/* 一言日記ページ */}
         <Route path="/diary" element={<DiaryPage />} />

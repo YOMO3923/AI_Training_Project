@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Home } from 'lucide-react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
@@ -8,6 +9,13 @@ const Layout = () => {
   // 現在の URL 情報を取得（ホームボタン表示の判定に使用）
   const location = useLocation()
   const showHomeButton = location.pathname !== '/'
+
+  useEffect(() => {
+    // ルートが切り替わるたびにスクロールを先頭へ戻す
+    // SPAは「ページの再読み込み」が起きないため、手動でリセットする必要がある
+    // 引数の (0, 0) は「左上」を意味し、どの画面でも同じ見た目の起点にできる
+    window.scrollTo(0, 0)
+  }, [location.pathname])
 
   return (
     // 背景全体（グラデーション + 装飾）
