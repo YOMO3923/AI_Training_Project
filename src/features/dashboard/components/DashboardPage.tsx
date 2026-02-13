@@ -1,4 +1,4 @@
-import { BookOpen, LayoutGrid, ListTodo, MoonStar } from 'lucide-react'
+import { BookOpen, Briefcase, LayoutGrid, ListTodo, MoonStar } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -40,6 +40,13 @@ const apps: AppCard[] = [
     description: '気軽に楽しめるクイズゲーム。',
     path: '/quiz',
     icon: LayoutGrid,
+    status: 'Active',
+  },
+  {
+    title: '旅綴',
+    description: '旅行管理アプリ',
+    path: '/travel',
+    icon: Briefcase,
     status: 'Active',
   },
 ]
