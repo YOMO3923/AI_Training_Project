@@ -40,6 +40,12 @@ const PackingPage = () => {
   const [isEditMode, setIsEditMode] = useState<boolean>(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState<boolean>(false)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+  const [isItemDeleteConfirmOpen, setIsItemDeleteConfirmOpen] = useState<boolean>(false)
+  const [itemDeleteTarget, setItemDeleteTarget] = useState<{
+    categoryId: string
+    itemId: string
+    itemName: string
+  } | null>(null)
 
   useEffect(() => {
     // カテゴリの状態が変わるたびにローカルへ保存して、再読み込みでも維持する
@@ -156,12 +162,25 @@ const PackingPage = () => {
     setIsDeleteConfirmOpen(true)
   }
 
+  const handleRequestDeleteItem = (categoryId: string, itemId: string, itemName: string) => {
+    setItemDeleteTarget({ categoryId, itemId, itemName })
+    setIsItemDeleteConfirmOpen(true)
+  }
+
   const handleConfirmDeleteCategory = () => {
     if (!deleteTarget) return
 
     handleDeleteCategory(deleteTarget.id)
     setDeleteTarget(null)
     setIsDeleteConfirmOpen(false)
+  }
+
+  const handleConfirmDeleteItem = () => {
+    if (!itemDeleteTarget) return
+
+    handleDeleteItem(itemDeleteTarget.categoryId, itemDeleteTarget.itemId)
+    setItemDeleteTarget(null)
+    setIsItemDeleteConfirmOpen(false)
   }
 
   return (
@@ -337,7 +356,7 @@ const PackingPage = () => {
             {/* 追加フォーム（input + button を横並び） */}
             <div className="mt-6 space-y-2">
               <p className="text-sm font-semibold text-[#111827]">新しいカテゴリを追加</p>
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <input
                   type="text"
                   value={newCategoryName}
@@ -408,7 +427,9 @@ const PackingPage = () => {
                                   <span className="text-[#111827]">{item.name}</span>
                                   <button
                                     type="button"
-                                    onClick={() => handleDeleteItem(category.id, item.id)}
+                                    onClick={() =>
+                                      handleRequestDeleteItem(category.id, item.id, item.name)
+                                    }
                                     className="rounded-md bg-[#ef4444] px-2 py-1 text-[10px] font-semibold text-white hover:bg-[#dc2626]"
                                   >
                                     削除
@@ -450,6 +471,37 @@ const PackingPage = () => {
               <button
                 type="button"
                 onClick={handleConfirmDeleteCategory}
+                className="rounded-full bg-[#ef4444] px-4 py-2 text-xs font-semibold text-white hover:bg-[#dc2626]"
+              >
+                削除する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* アイテム削除の確認モーダル（削除前にユーザーへ最終確認） */}
+      {isItemDeleteConfirmOpen && itemDeleteTarget && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-[#111827]">持ち物を削除しますか？</h3>
+            <p className="mt-2 text-sm text-[#4b5563]">
+              「{itemDeleteTarget.itemName}」を削除します。
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsItemDeleteConfirmOpen(false)
+                  setItemDeleteTarget(null)
+                }}
+                className="rounded-full border border-[#111827]/10 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteItem}
                 className="rounded-full bg-[#ef4444] px-4 py-2 text-xs font-semibold text-white hover:bg-[#dc2626]"
               >
                 削除する
