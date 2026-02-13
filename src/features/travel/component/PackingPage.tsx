@@ -224,37 +224,36 @@ const PackingPage = () => {
         {/* セクションタイトル */}
         <h3 className="text-lg font-semibold text-[#111827]">カテゴリ一覧</h3>
         {/* 一覧（mt-4: 上余白, space-y-2: 各行の縦間隔） */}
-        <ul className="mt-4 space-y-2">
+        <ul className="mt-4 space-y-4">
           {categories.map((category) => {
             // 各カテゴリの進捗表示を作るため、チェック数と合計数を先に計算する
             const checkedCount = category.items.filter((item) => item.checked).length
             const totalCount = category.items.length
-            const progressPercent = totalCount === 0 ? 0 : Math.round((checkedCount / totalCount) * 100)
             const CategoryIcon =
               categoryIconMap[category.id as keyof typeof categoryIconMap] ?? Package
 
             return (
               <li
                 key={category.id}
-                className="rounded-lg border border-[#111827]/10 px-4 py-3 text-sm text-[#111827]"
+                className="rounded-2xl border border-[#111827]/10 px-6 py-5 text-lg text-[#111827]"
               >
               <button
                 type="button"
                 onClick={() => handleToggleCategory(category.id)}
-                className="flex w-full items-center justify-between"
+                  className="flex w-full items-center justify-between"
               >
                 <div className="flex items-center gap-3">
                   {/* アイコン + タイトルの並び（flex で横並びにする） */}
-                  <span className="inline-flex items-center gap-2 font-semibold">
-                      <CategoryIcon className="h-4 w-4 text-[#0f766e]" />
+                    <span className="inline-flex items-center gap-3 font-semibold">
+                      <CategoryIcon className="h-6 w-6 text-[#0f766e]" />
                       {category.name}
                   </span>
-                  {/* 進捗表示（チェック済み数/合計 + ％） */}
-                  <span className="rounded-full border border-[#111827]/10 bg-white px-2 py-0.5 text-[10px] text-[#6b7280]">
-                      {checkedCount}/{totalCount} ({progressPercent}%)
+                    {/* 進捗表示（チェック済み数/合計） */}
+                    <span className="rounded-full border border-[#111827]/10 bg-white px-4 py-1.5 text-sm text-[#6b7280]">
+                      {checkedCount}/{totalCount}
                   </span>
                 </div>
-                <span className="text-xs text-[#6b7280]">
+                  <span className="text-base text-[#6b7280]">
                   {expandedCategoryIds.includes(category.id) ? "閉じる" : "開く"}
                 </span>
               </button>
@@ -266,18 +265,18 @@ const PackingPage = () => {
                       まだ持ち物が登録されていません。
                     </p>
                   ) : (
-                    <ul className="space-y-2">
+                    <ul className="space-y-4">
                       {category.items.map((item) => (
                         <li
                           key={item.id}
-                          className="rounded-md border border-[#111827]/10 px-3 py-2 text-xs text-[#111827]"
+                          className="rounded-xl border border-[#111827]/10 px-5 py-4 text-base text-[#111827]"
                         >
-                          <label className="flex cursor-pointer items-center gap-2">
+                          <label className="flex cursor-pointer items-center gap-3">
                             <input
                               type="checkbox"
                               checked={item.checked}
                               onChange={() => handleToggleItemChecked(category.id, item.id)}
-                              className="h-4 w-4 rounded border-[#111827]/20 text-[#0f766e]"
+                              className="h-6 w-6 rounded border-[#111827]/20 text-[#0f766e]"
                             />
                             <span className={item.checked ? "text-[#6b7280] line-through" : ""}>
                               {item.name}
