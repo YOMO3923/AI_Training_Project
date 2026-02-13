@@ -266,20 +266,18 @@ const PackingPage = () => {
       <div className="space-y-2">
         {/* 小さなラベル（text-xs: 小さい文字, uppercase: 大文字, tracking: 文字間隔, text-gray: 色） */}
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#6b7280]">
-          packing
+          The Smart Travel Checklist
         </p>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* 戻るボタン（タイトルと同じ行に配置） */}
-            <Link
-              to="/travel"
-              className="inline-flex items-center gap-2 rounded-full border border-[#111827]/10 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50"
-            >
-              戻る
-            </Link>
-            {/* メインタイトル（text-2xl: 大きな文字, font-semibold: 太字, text-[#111827]:濃い文字色） */}
-            <h2 className="text-2xl font-semibold text-[#111827]">パッキング管理</h2>
-          </div>
+        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
+          {/* 戻るボタン（タイトルと同じ行に配置） */}
+          <Link
+            to="/travel"
+            className="inline-flex items-center gap-2 rounded-full border border-[#111827]/10 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50"
+          >
+            戻る
+          </Link>
+          {/* メインタイトル（中央寄せ） */}
+          <h2 className="text-center text-2xl font-semibold text-[#111827]">READY</h2>
           <button
             type="button" // この行はフォーム送信を防ぐ
             onClick={handleToggleEditMode} // この行は編集モードの切替を行う
@@ -290,7 +288,7 @@ const PackingPage = () => {
           </button>
         </div>
         {/* 説明文（text-sm: 小さめ文字, text-[#4b5563]: グレー） */}
-        <p className="text-sm text-[#4b5563]">
+        <p className="text-center text-sm text-[#4b5563]">
           カテゴリごとに持ち物を整理し、準備状況を確認できます。
         </p>
       </div>

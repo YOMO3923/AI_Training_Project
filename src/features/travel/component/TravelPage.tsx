@@ -19,8 +19,8 @@ const TravelPage = () => {
                 <Briefcase className="h-6 w-6" />
               </span>
               <div>
-                <CardTitle className="text-lg">Packing</CardTitle>
-                <CardDescription className="mt-1 text-sm">旅行の持ち物リストを作成・管理します。</CardDescription>
+                <CardTitle className="text-lg">READY</CardTitle>
+                <CardDescription className="mt-1 text-sm">旅の装備を、完璧に。</CardDescription>
               </div>
             </div>
           </CardHeader>
