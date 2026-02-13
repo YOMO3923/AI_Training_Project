@@ -340,7 +340,7 @@ const PackingPage = () => {
       {isEditMode && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
           {/* モーダル本体（背景・余白・角丸でカード化） */}
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-lg">
+          <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-lg overscroll-contain">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-[#111827]">カテゴリ編集</h3>
               <button
@@ -361,7 +361,7 @@ const PackingPage = () => {
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="カテゴリ名を入力"
-                  className="flex-1 rounded-lg border border-[#111827]/10 px-3 py-2 text-sm text-[#111827] placeholder:text-[#9ca3af]"
+                  className="h-12 flex-1 rounded-xl border border-[#111827]/10 px-4 text-base text-[#111827] placeholder:text-[#9ca3af]"
                 />
                 <button
                   type="button"
