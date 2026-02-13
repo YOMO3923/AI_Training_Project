@@ -1,10 +1,20 @@
-import { useEffect, useState } from "react" // この行は外部データと型を読み込む
-import { Settings } from "lucide-react"
+import { useEffect, useRef, useState } from "react" // この行は外部データと型を読み込む
+import { Luggage, Package, Shirt, Sparkles, Ticket, Wallet, Settings } from "lucide-react"
 import { Link } from "react-router-dom"
 import { initialPackingCategories } from "../data/PackingData"
 import type { PackingCategory } from "../data/PackingData" // PackingCategory 型をインポート
 
 const STORAGE_KEY = "travel_packing_categories" // この行はローカル保存に使うキーを定義する
+
+// カテゴリIDに合わせてアイコンを表示するための対応表
+const categoryIconMap = {
+  cloths: Shirt,
+  valuables: Wallet,
+  toiletries: Sparkles,
+  electronics: Luggage,
+  tickets: Ticket,
+  others: Package,
+} as const // この行はカテゴリIDとアイコンの対応表を固定する
 
 const PackingPage = () => {
   const [categories, setCategories] = useState<PackingCategory[]>(() => {
@@ -29,6 +39,8 @@ const PackingPage = () => {
   const [isEditMode, setIsEditMode] = useState<boolean>(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState<boolean>(false)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+  const [swipedItemId, setSwipedItemId] = useState<string | null>(null) // この行は左スワイプ中のアイテムIDを保持する
+  const touchStartXRef = useRef<number | null>(null) // この行はスワイプ開始位置を保持する
 
   useEffect(() => {
     // カテゴリの状態が変わるたびにローカルへ保存して、再読み込みでも維持する
@@ -118,6 +130,41 @@ const PackingPage = () => {
     )
   }
 
+  const handleDeleteItem = (categoryId: string, itemId: string) => {
+    // 削除対象のアイテムだけ除外し、画面とデータを更新する
+    setCategories((prev) =>
+      prev.map((category) =>
+        category.id === categoryId
+          ? { ...category, items: category.items.filter((item) => item.id !== itemId) }
+          : category
+      )
+    )
+    setSwipedItemId((prev) => (prev === itemId ? null : prev))
+  }
+
+  const handleSwipeStart = (clientX: number) => {
+    // タップ/クリック開始位置を記録して、後で移動量を計算する
+    touchStartXRef.current = clientX
+  }
+
+  const handleSwipeEnd = (itemId: string, clientX: number) => {
+    if (touchStartXRef.current === null) return
+
+    // 左方向に一定以上動いたら「削除ボタン表示」として扱う
+    const deltaX = clientX - touchStartXRef.current
+    const SWIPE_THRESHOLD = 40 // この行はスワイプ判定の距離を固定する
+
+    if (deltaX < -SWIPE_THRESHOLD) {
+      setSwipedItemId(itemId)
+    }
+
+    if (deltaX > SWIPE_THRESHOLD) {
+      setSwipedItemId((prev) => (prev === itemId ? null : prev))
+    }
+
+    touchStartXRef.current = null
+  }
+
   const handleToggleEditMode = () => {
     setIsEditMode((prev) => !prev) // この行は編集モードをトグルする
   }
@@ -177,29 +224,33 @@ const PackingPage = () => {
         <h3 className="text-lg font-semibold text-[#111827]">カテゴリ一覧</h3>
         {/* 一覧（mt-4: 上余白, space-y-2: 各行の縦間隔） */}
         <ul className="mt-4 space-y-2">
-          {categories.map((category) => (
-            <li
-              key={category.id}
-              className="rounded-lg border border-[#111827]/10 px-4 py-3 text-sm text-[#111827]"
-            >
+          {categories.map((category) => {
+            // 各カテゴリの進捗表示を作るため、チェック数と合計数を先に計算する
+            const checkedCount = category.items.filter((item) => item.checked).length
+            const totalCount = category.items.length
+            const progressPercent = totalCount === 0 ? 0 : Math.round((checkedCount / totalCount) * 100)
+            const CategoryIcon =
+              categoryIconMap[category.id as keyof typeof categoryIconMap] ?? Package
+
+            return (
+              <li
+                key={category.id}
+                className="rounded-lg border border-[#111827]/10 px-4 py-3 text-sm text-[#111827]"
+              >
               <button
                 type="button"
                 onClick={() => handleToggleCategory(category.id)}
                 className="flex w-full items-center justify-between"
               >
                 <div className="flex items-center gap-3">
-                  <span className="font-semibold">{category.name}</span>
+                  {/* アイコン + タイトルの並び（flex で横並びにする） */}
+                  <span className="inline-flex items-center gap-2 font-semibold">
+                      <CategoryIcon className="h-4 w-4 text-[#0f766e]" />
+                      {category.name}
+                  </span>
                   {/* 進捗表示（チェック済み数/合計 + ％） */}
                   <span className="rounded-full border border-[#111827]/10 bg-white px-2 py-0.5 text-[10px] text-[#6b7280]">
-                    {category.items.filter((item) => item.checked).length}/
-                    {category.items.length}
-                    {category.items.length === 0
-                      ? " (0%)"
-                      : ` (${Math.round(
-                        (category.items.filter((item) => item.checked).length /
-                          category.items.length) *
-                          100
-                      )}%)`}
+                      {checkedCount}/{totalCount} ({progressPercent}%)
                   </span>
                 </div>
                 <span className="text-xs text-[#6b7280]">
@@ -218,19 +269,42 @@ const PackingPage = () => {
                       {category.items.map((item) => (
                         <li
                           key={item.id}
-                          className="rounded-md border border-[#111827]/10 px-3 py-2 text-xs text-[#111827]"
+                          className="relative overflow-hidden rounded-md border border-[#111827]/10 text-xs text-[#111827]"
+                          onTouchStart={(event) => handleSwipeStart(event.touches[0].clientX)}
+                          onTouchEnd={(event) => handleSwipeEnd(item.id, event.changedTouches[0].clientX)}
+                          onMouseDown={(event) => handleSwipeStart(event.clientX)}
+                          onMouseUp={(event) => handleSwipeEnd(item.id, event.clientX)}
                         >
-                          <label className="flex cursor-pointer items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={item.checked}
-                              onChange={() => handleToggleItemChecked(category.id, item.id)}
-                              className="h-4 w-4 rounded border-[#111827]/20 text-[#0f766e]"
-                            />
-                            <span className={item.checked ? "text-[#6b7280] line-through" : ""}>
-                              {item.name}
-                            </span>
-                          </label>
+                          {/* 左スワイプで中身をずらして、削除ボタンを見せる */}
+                          <div
+                            className={`flex items-center gap-2 px-3 py-2 transition-transform ${
+                              swipedItemId === item.id ? "-translate-x-16" : "translate-x-0"
+                            }`}
+                          >
+                            <label className="flex flex-1 cursor-pointer items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={item.checked}
+                                onChange={() => handleToggleItemChecked(category.id, item.id)}
+                                className="h-4 w-4 rounded border-[#111827]/20 text-[#0f766e]"
+                              />
+                              <span className={item.checked ? "text-[#6b7280] line-through" : ""}>
+                                {item.name}
+                              </span>
+                            </label>
+                          </div>
+                          {/* 削除ボタン（スワイプ時のみ表示） */}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteItem(category.id, item.id)}
+                            className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-[#ef4444] px-3 py-1 text-[10px] font-semibold text-white transition-opacity ${
+                              swipedItemId === item.id
+                                ? "opacity-100"
+                                : "pointer-events-none opacity-0"
+                            }`}
+                          >
+                            削除
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -238,7 +312,8 @@ const PackingPage = () => {
                 </div>
               )}
             </li>
-          ))}
+            )
+          })}
         </ul>
       </div>
 
