@@ -302,7 +302,7 @@ const PackingPage = () => {
           <select
             value={newItemCategoryId}
             onChange={(e) => setNewItemCategoryId(e.target.value)}
-            className="rounded-lg border border-[#111827]/10 px-3 py-2 text-sm text-[#111827]"
+            className="h-12 rounded-xl border border-[#111827]/10 px-4 text-base text-[#111827]"
             disabled={categories.length === 0}
           >
             {categories.length === 0 ? (
@@ -321,14 +321,14 @@ const PackingPage = () => {
             value={newItemName}
             onChange={(e) => setNewItemName(e.target.value)}
             placeholder="例：充電器"
-            className="rounded-lg border border-[#111827]/10 px-3 py-2 text-sm text-[#111827] placeholder:text-[#9ca3af]"
+            className="h-12 rounded-xl border border-[#111827]/10 px-4 text-base text-[#111827] placeholder:text-[#9ca3af]"
             disabled={categories.length === 0}
           />
           {/* 追加ボタン（カテゴリが無い場合は無効化） */}
           <button
             type="button"
             onClick={handleAddItem}
-            className="rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#115e59] disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-12 rounded-xl bg-[#0f766e] px-6 text-base font-semibold text-white hover:bg-[#115e59] disabled:cursor-not-allowed disabled:opacity-40"
             disabled={categories.length === 0}
           >
             追加
