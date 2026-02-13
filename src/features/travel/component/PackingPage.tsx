@@ -297,7 +297,7 @@ const PackingPage = () => {
       {/* 画面下部のアイテム追加エリア（カテゴリ選択 + 入力欄） */}
       <div className="rounded-2xl border border-[#111827]/10 bg-white p-6 shadow-sm">
         <h3 className="text-lg font-semibold text-[#111827]">持ち物を追加</h3>
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_2fr_auto]">
+        <div className="mt-4 flex flex-col gap-3 sm:grid sm:grid-cols-[1fr_2fr_auto]">
           {/* カテゴリ選択（select によって追加先を指定） */}
           <select
             value={newItemCategoryId}
@@ -328,7 +328,7 @@ const PackingPage = () => {
           <button
             type="button"
             onClick={handleAddItem}
-            className="h-12 rounded-xl bg-[#0f766e] px-6 text-base font-semibold text-white hover:bg-[#115e59] disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-12 w-full rounded-xl bg-[#0f766e] px-6 text-base font-semibold text-white hover:bg-[#115e59] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
             disabled={categories.length === 0}
           >
             追加
