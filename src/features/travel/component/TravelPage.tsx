@@ -7,7 +7,7 @@ const TravelPage = () => {
     <main className="w-full max-w-3xl animate-[fade-up_0.7s_ease-out] space-y-6">
       <div className="space-y-2 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#6b7280]">tabitsuzuri</p>
-        <h2 className="text-2xl font-semibold text-[#111827]">旅綴</h2>
+        <h2 className="text-2xl font-semibold text-[#111827]">Journey</h2>
         <p className="text-sm text-[#4b5563]">旅に関する計画や情報を管理します。</p>
       </div>
 

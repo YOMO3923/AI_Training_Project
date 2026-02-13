@@ -43,7 +43,7 @@ const apps: AppCard[] = [
     status: 'Active',
   },
   {
-    title: '旅綴',
+    title: 'Journey',
     description: '旅行管理アプリ',
     path: '/travel',
     icon: Briefcase,
