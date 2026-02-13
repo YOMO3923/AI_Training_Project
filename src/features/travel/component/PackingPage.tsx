@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react" // この行は外部データと型を読み込む
+import { useEffect, useState } from "react" // この行は外部データと型を読み込む
 import { Luggage, Package, Shirt, Sparkles, Ticket, Wallet, Settings } from "lucide-react"
 import { Link } from "react-router-dom"
 import { initialPackingCategories } from "../data/PackingData"
@@ -36,11 +36,10 @@ const PackingPage = () => {
   )
   const [newItemName, setNewItemName] = useState<string>('')
   const [expandedCategoryIds, setExpandedCategoryIds] = useState<string[]>([]) // この行は開いているカテゴリIDを配列で保持する（複数開閉対応）
+  const [expandedEditCategoryIds, setExpandedEditCategoryIds] = useState<string[]>([]) // この行は編集モーダル内で開いているカテゴリIDを保持する
   const [isEditMode, setIsEditMode] = useState<boolean>(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState<boolean>(false)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
-  const [swipedItemId, setSwipedItemId] = useState<string | null>(null) // この行は左スワイプ中のアイテムIDを保持する
-  const touchStartXRef = useRef<number | null>(null) // この行はスワイプ開始位置を保持する
 
   useEffect(() => {
     // カテゴリの状態が変わるたびにローカルへ保存して、再読み込みでも維持する
@@ -139,34 +138,17 @@ const PackingPage = () => {
           : category
       )
     )
-    setSwipedItemId((prev) => (prev === itemId ? null : prev))
-  }
-
-  const handleSwipeStart = (clientX: number) => {
-    // タップ/クリック開始位置を記録して、後で移動量を計算する
-    touchStartXRef.current = clientX
-  }
-
-  const handleSwipeEnd = (itemId: string, clientX: number) => {
-    if (touchStartXRef.current === null) return
-
-    // 左方向に一定以上動いたら「削除ボタン表示」として扱う
-    const deltaX = clientX - touchStartXRef.current
-    const SWIPE_THRESHOLD = 40 // この行はスワイプ判定の距離を固定する
-
-    if (deltaX < -SWIPE_THRESHOLD) {
-      setSwipedItemId(itemId)
-    }
-
-    if (deltaX > SWIPE_THRESHOLD) {
-      setSwipedItemId((prev) => (prev === itemId ? null : prev))
-    }
-
-    touchStartXRef.current = null
   }
 
   const handleToggleEditMode = () => {
     setIsEditMode((prev) => !prev) // この行は編集モードをトグルする
+  }
+
+  const handleToggleEditCategory = (id: string) => {
+    // 編集モーダル内のカテゴリ開閉を切り替える
+    setExpandedEditCategoryIds((prev) =>
+      prev.includes(id) ? prev.filter((categoryId) => categoryId !== id) : [...prev, id]
+    )
   }
 
   const handleRequestDeleteCategory = (id: string, name: string) => {
@@ -269,42 +251,19 @@ const PackingPage = () => {
                       {category.items.map((item) => (
                         <li
                           key={item.id}
-                          className="relative overflow-hidden rounded-md border border-[#111827]/10 text-xs text-[#111827]"
-                          onTouchStart={(event) => handleSwipeStart(event.touches[0].clientX)}
-                          onTouchEnd={(event) => handleSwipeEnd(item.id, event.changedTouches[0].clientX)}
-                          onMouseDown={(event) => handleSwipeStart(event.clientX)}
-                          onMouseUp={(event) => handleSwipeEnd(item.id, event.clientX)}
+                          className="rounded-md border border-[#111827]/10 px-3 py-2 text-xs text-[#111827]"
                         >
-                          {/* 左スワイプで中身をずらして、削除ボタンを見せる */}
-                          <div
-                            className={`flex items-center gap-2 px-3 py-2 transition-transform ${
-                              swipedItemId === item.id ? "-translate-x-16" : "translate-x-0"
-                            }`}
-                          >
-                            <label className="flex flex-1 cursor-pointer items-center gap-2">
-                              <input
-                                type="checkbox"
-                                checked={item.checked}
-                                onChange={() => handleToggleItemChecked(category.id, item.id)}
-                                className="h-4 w-4 rounded border-[#111827]/20 text-[#0f766e]"
-                              />
-                              <span className={item.checked ? "text-[#6b7280] line-through" : ""}>
-                                {item.name}
-                              </span>
-                            </label>
-                          </div>
-                          {/* 削除ボタン（スワイプ時のみ表示） */}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteItem(category.id, item.id)}
-                            className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-[#ef4444] px-3 py-1 text-[10px] font-semibold text-white transition-opacity ${
-                              swipedItemId === item.id
-                                ? "opacity-100"
-                                : "pointer-events-none opacity-0"
-                            }`}
-                          >
-                            削除
-                          </button>
+                          <label className="flex cursor-pointer items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={item.checked}
+                              onChange={() => handleToggleItemChecked(category.id, item.id)}
+                              className="h-4 w-4 rounded border-[#111827]/20 text-[#0f766e]"
+                            />
+                            <span className={item.checked ? "text-[#6b7280] line-through" : ""}>
+                              {item.name}
+                            </span>
+                          </label>
                         </li>
                       ))}
                     </ul>
@@ -406,16 +365,60 @@ const PackingPage = () => {
                   {categories.map((category) => (
                     <li
                       key={category.id}
-                      className="flex items-center justify-between rounded-lg border border-[#111827]/10 px-3 py-2 text-sm"
+                      className="rounded-lg border border-[#111827]/10 px-3 py-2 text-sm"
                     >
-                      <span className="font-semibold text-[#111827]">{category.name}</span>
                       <button
                         type="button"
-                        onClick={() => handleRequestDeleteCategory(category.id, category.name)}
-                        className="rounded-md bg-[#ef4444] px-3 py-1 text-xs font-semibold text-white hover:bg-[#dc2626]"
+                        onClick={() => handleToggleEditCategory(category.id)}
+                        className="flex w-full items-center justify-between"
                       >
-                        削除
+                        <span className="font-semibold text-[#111827]">{category.name}</span>
+                        <span
+                          className={`text-xs text-[#6b7280] transition-transform ${
+                            expandedEditCategoryIds.includes(category.id)
+                              ? "rotate-90"
+                              : "rotate-0"
+                          }`}
+                        >
+                          ＞
+                        </span>
                       </button>
+
+                      {expandedEditCategoryIds.includes(category.id) && (
+                        <div className="mt-3 space-y-3">
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => handleRequestDeleteCategory(category.id, category.name)}
+                              className="rounded-md bg-[#ef4444] px-3 py-1 text-xs font-semibold text-white hover:bg-[#dc2626]"
+                            >
+                              カテゴリを削除
+                            </button>
+                          </div>
+
+                          {category.items.length === 0 ? (
+                            <p className="text-xs text-[#6b7280]">削除できる持ち物がありません。</p>
+                          ) : (
+                            <ul className="space-y-2">
+                              {category.items.map((item) => (
+                                <li
+                                  key={item.id}
+                                  className="flex items-center justify-between rounded-md border border-[#111827]/10 px-3 py-2 text-xs"
+                                >
+                                  <span className="text-[#111827]">{item.name}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteItem(category.id, item.id)}
+                                    className="rounded-md bg-[#ef4444] px-2 py-1 text-[10px] font-semibold text-white hover:bg-[#dc2626]"
+                                  >
+                                    削除
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ul>
