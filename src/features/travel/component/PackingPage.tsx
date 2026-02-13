@@ -5,6 +5,7 @@ import { initialPackingCategories } from "../data/PackingData"
 import type { PackingCategory } from "../data/PackingData" // PackingCategory 型をインポート
 
 const STORAGE_KEY = "travel_packing_categories" // この行はローカル保存に使うキーを定義する
+const STORAGE_MIGRATION_KEY = "travel_packing_categories_migrated_v1" // この行は初期カテゴリ補完の実行済みフラグ
 
 // カテゴリIDに合わせてアイコンを表示するための対応表
 const categoryIconMap = {
@@ -26,12 +27,19 @@ const PackingPage = () => {
     try {
       const parsed = JSON.parse(saved) as PackingCategory[]
 
-      // 保存データに新しいカテゴリが無い場合は、初期データから補完する
-      const merged = initialPackingCategories.map((initialCategory) => {
-        const found = parsed.find((category) => category.id === initialCategory.id)
-        return found ?? initialCategory
+      // 新しい初期カテゴリの補完は「一度だけ」行う
+      const isMigrated = localStorage.getItem(STORAGE_MIGRATION_KEY) === "true"
+      if (isMigrated) return parsed
+
+      const merged = [...parsed]
+      initialPackingCategories.forEach((initialCategory) => {
+        const exists = parsed.some((category) => category.id === initialCategory.id)
+        if (!exists) {
+          merged.push(initialCategory)
+        }
       })
 
+      localStorage.setItem(STORAGE_MIGRATION_KEY, "true")
       return merged
     } catch {
       return initialPackingCategories
