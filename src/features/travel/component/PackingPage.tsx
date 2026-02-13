@@ -133,10 +133,8 @@ const PackingPage = () => {
   }
 
   const handleToggleCategory = (id: string) => {
-    // 既に開いているなら閉じ、閉じているなら開く（複数開ける仕様）
-    setExpandedCategoryIds((prev) =>
-      prev.includes(id) ? prev.filter((categoryId) => categoryId !== id) : [...prev, id]
-    )
+    // 既に開いているなら閉じ、閉じているなら開く（1つだけ開く仕様）
+    setExpandedCategoryIds((prev) => (prev.includes(id) ? [] : [id]))
   }
 
   const handleToggleItemChecked = (categoryId: string, itemId: string) => {
@@ -166,7 +164,18 @@ const PackingPage = () => {
   }
 
   const handleToggleEditMode = () => {
-    setIsEditMode((prev) => !prev) // この行は編集モードをトグルする
+    setIsEditMode((prev) => {
+      const next = !prev
+
+      // モーダルを閉じる時に展開状態と編集状態をリセットする
+      if (!next) {
+        setExpandedEditCategoryIds([])
+        setEditingItem(null)
+        setMoveTargetCategoryId('')
+      }
+
+      return next
+    })
   }
 
   const handleToggleEditCategory = (id: string) => {
@@ -268,7 +277,7 @@ const PackingPage = () => {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#6b7280]">
           The Smart Travel Checklist
         </p>
-        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3">
+        <div className="relative flex items-center justify-between">
           {/* 戻るボタン（タイトルと同じ行に配置） */}
           <Link
             to="/travel"
@@ -276,8 +285,10 @@ const PackingPage = () => {
           >
             戻る
           </Link>
-          {/* メインタイトル（中央寄せ） */}
-          <h2 className="text-center text-2xl font-semibold text-[#111827]">READY</h2>
+          {/* メインタイトル（左右のボタン幅に影響されない中央配置） */}
+          <h2 className="absolute left-1/2 -translate-x-1/2 text-2xl font-semibold text-[#111827]">
+            READY
+          </h2>
           <button
             type="button" // この行はフォーム送信を防ぐ
             onClick={handleToggleEditMode} // この行は編集モードの切替を行う
