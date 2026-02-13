@@ -55,6 +55,14 @@ export const initialPackingCategories: PackingCategory[] = [
     ],
   },
   { 
+    id: "daily-essentials", 
+    name: "日用品",
+    items: [
+      { id: "daily-1", name: "タオル", checked: false },
+      { id: "daily-2", name: "ハンカチ", checked: false },
+    ],
+  },
+  { 
     id: "others", 
     name: "その他",
     items: [

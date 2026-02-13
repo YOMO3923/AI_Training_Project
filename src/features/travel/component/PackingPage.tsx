@@ -13,6 +13,7 @@ const categoryIconMap = {
   toiletries: Sparkles,
   electronics: Luggage,
   tickets: Ticket,
+  "daily-essentials": Package,
   others: Package,
 } as const // この行はカテゴリIDとアイコンの対応表を固定する
 
@@ -24,7 +25,14 @@ const PackingPage = () => {
 
     try {
       const parsed = JSON.parse(saved) as PackingCategory[]
-      return parsed
+
+      // 保存データに新しいカテゴリが無い場合は、初期データから補完する
+      const merged = initialPackingCategories.map((initialCategory) => {
+        const found = parsed.find((category) => category.id === initialCategory.id)
+        return found ?? initialCategory
+      })
+
+      return merged
     } catch {
       return initialPackingCategories
     }
@@ -46,6 +54,9 @@ const PackingPage = () => {
     itemId: string
     itemName: string
   } | null>(null)
+  const [editingItem, setEditingItem] = useState<{ categoryId: string; itemId: string } | null>(null)
+  const [moveTargetCategoryId, setMoveTargetCategoryId] = useState<string>('')
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState<boolean>(false)
 
   useEffect(() => {
     // カテゴリの状態が変わるたびにローカルへ保存して、再読み込みでも維持する
@@ -183,6 +194,63 @@ const PackingPage = () => {
     setIsItemDeleteConfirmOpen(false)
   }
 
+  const handleStartEditItem = (categoryId: string, itemId: string) => {
+    setEditingItem({ categoryId, itemId })
+    setMoveTargetCategoryId(categoryId) // この行は初期状態として現在のカテゴリを選択する
+  }
+
+  const handleCancelEditItem = () => {
+    setEditingItem(null)
+    setMoveTargetCategoryId('')
+  }
+
+  const handleMoveItem = () => {
+    if (!editingItem || moveTargetCategoryId === '') return
+
+    setCategories((prev) => {
+      let movingItem: PackingCategory['items'][number] | undefined
+
+      const removed = prev.map((category) => {
+        if (category.id !== editingItem.categoryId) return category
+
+        const nextItems = category.items.filter((item) => {
+          if (item.id !== editingItem.itemId) return true
+          movingItem = item
+          return false
+        })
+
+        return { ...category, items: nextItems }
+      })
+
+      if (!movingItem) return prev
+
+      const itemToMove = movingItem
+
+      return removed.map((category) =>
+        category.id === moveTargetCategoryId
+          ? { ...category, items: [...category.items, itemToMove] }
+          : category
+      )
+    })
+
+    setEditingItem(null)
+    setMoveTargetCategoryId('')
+  }
+
+  const handleRequestResetAll = () => {
+    setIsResetConfirmOpen(true)
+  }
+
+  const handleConfirmResetAll = () => {
+    setCategories((prev) =>
+      prev.map((category) => ({
+        ...category,
+        items: category.items.map((item) => ({ ...item, checked: false })),
+      }))
+    )
+    setIsResetConfirmOpen(false)
+  }
+
   return (
     // main はページの主要コンテンツ領域（w-full: 幅100%, max-w-3xl: 最大幅, space-y-6: 縦余白, animate...: ふわっと表示）
     <main className='w-full max-w-3xl animate-[fade-up_0.7s_ease-out] space-y-6'>
@@ -222,7 +290,16 @@ const PackingPage = () => {
       {/* カテゴリ一覧のカード（border/bg/p/rounded/shadow は上と同じ理由） */}
       <div className="rounded-2xl border border-[#111827]/10 bg-white p-6 shadow-sm">
         {/* セクションタイトル */}
-        <h3 className="text-lg font-semibold text-[#111827]">カテゴリ一覧</h3>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-lg font-semibold text-[#111827]">カテゴリ一覧</h3>
+          <button
+            type="button"
+            onClick={handleRequestResetAll}
+            className="rounded-full border border-[#111827]/10 bg-white px-4 py-2 text-sm font-semibold text-[#111827] hover:bg-slate-50"
+          >
+            チェック解除
+          </button>
+        </div>
         {/* 一覧（mt-4: 上余白, space-y-2: 各行の縦間隔） */}
         <ul className="mt-4 space-y-4">
           {categories.map((category) => {
@@ -240,20 +317,20 @@ const PackingPage = () => {
               <button
                 type="button"
                 onClick={() => handleToggleCategory(category.id)}
-                  className="flex w-full items-center justify-between"
+                className="flex w-full items-center justify-between"
               >
                 <div className="flex items-center gap-3">
                   {/* アイコン + タイトルの並び（flex で横並びにする） */}
-                    <span className="inline-flex items-center gap-3 font-semibold">
-                      <CategoryIcon className="h-6 w-6 text-[#0f766e]" />
-                      {category.name}
+                  <span className="inline-flex items-center gap-3 font-semibold">
+                    <CategoryIcon className="h-6 w-6 text-[#0f766e]" />
+                    {category.name}
                   </span>
-                    {/* 進捗表示（チェック済み数/合計） */}
-                    <span className="rounded-full border border-[#111827]/10 bg-white px-4 py-1.5 text-sm text-[#6b7280]">
-                      {checkedCount}/{totalCount}
+                  {/* 進捗表示（チェック済み数/合計） */}
+                  <span className="rounded-full border border-[#111827]/10 bg-white px-4 py-1.5 text-sm text-[#6b7280]">
+                    {checkedCount}/{totalCount}
                   </span>
                 </div>
-                  <span className="text-base text-[#6b7280]">
+                <span className="text-base text-[#6b7280]">
                   {expandedCategoryIds.includes(category.id) ? "閉じる" : "開く"}
                 </span>
               </button>
@@ -423,16 +500,60 @@ const PackingPage = () => {
                                   key={item.id}
                                   className="flex items-center justify-between rounded-md border border-[#111827]/10 px-3 py-2 text-xs"
                                 >
-                                  <span className="text-[#111827]">{item.name}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleRequestDeleteItem(category.id, item.id, item.name)
-                                    }
-                                    className="rounded-md bg-[#ef4444] px-2 py-1 text-[10px] font-semibold text-white hover:bg-[#dc2626]"
-                                  >
-                                    削除
-                                  </button>
+                                  {editingItem?.itemId === item.id ? (
+                                    <div className="flex w-full flex-col gap-2">
+                                      <span className="text-[#111827]">{item.name}</span>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <select
+                                          value={moveTargetCategoryId}
+                                          onChange={(event) => setMoveTargetCategoryId(event.target.value)}
+                                          className="h-10 rounded-lg border border-[#111827]/10 px-3 text-xs text-[#111827]"
+                                        >
+                                          {categories.map((optionCategory) => (
+                                            <option key={optionCategory.id} value={optionCategory.id}>
+                                              {optionCategory.name}
+                                            </option>
+                                          ))}
+                                        </select>
+                                        <button
+                                          type="button"
+                                          onClick={handleMoveItem}
+                                          className="rounded-md bg-[#0f766e] px-3 py-1 text-[10px] font-semibold text-white hover:bg-[#115e59]"
+                                        >
+                                          変更
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={handleCancelEditItem}
+                                          className="rounded-md border border-[#111827]/10 bg-white px-3 py-1 text-[10px] font-semibold text-[#111827] hover:bg-slate-50"
+                                        >
+                                          キャンセル
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <span className="text-[#111827]">{item.name}</span>
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleStartEditItem(category.id, item.id)}
+                                          className="rounded-md border border-[#111827]/10 bg-white px-2 py-1 text-[10px] font-semibold text-[#111827] hover:bg-slate-50"
+                                        >
+                                          編集
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleRequestDeleteItem(category.id, item.id, item.name)
+                                          }
+                                          className="rounded-md bg-[#ef4444] px-2 py-1 text-[10px] font-semibold text-white hover:bg-[#dc2626]"
+                                        >
+                                          削除
+                                        </button>
+                                      </div>
+                                    </>
+                                  )}
                                 </li>
                               ))}
                             </ul>
@@ -504,6 +625,36 @@ const PackingPage = () => {
                 className="rounded-full bg-[#ef4444] px-4 py-2 text-xs font-semibold text-white hover:bg-[#dc2626]"
               >
                 削除する
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* チェック解除の確認モーダル（カテゴリ内のチェックをまとめて外す） */}
+      {isResetConfirmOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-[#111827]">チェックを外しますか？</h3>
+            <p className="mt-2 text-sm text-[#4b5563]">
+              すべてのカテゴリのチェックを外します。
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsResetConfirmOpen(false)
+                }}
+                className="rounded-full border border-[#111827]/10 bg-white px-4 py-2 text-xs font-semibold text-[#111827] hover:bg-slate-50"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmResetAll}
+                className="rounded-full bg-[#0f766e] px-4 py-2 text-xs font-semibold text-white hover:bg-[#115e59]"
+              >
+                外す
               </button>
             </div>
           </div>
